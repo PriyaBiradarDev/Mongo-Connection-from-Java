@@ -1,0 +1,97 @@
+package com.jcg.csv2excel;
+
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.xssf.usermodel.XSSFRow;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.bson.Document;
+
+//import org.codehaus.jackson.map.ObjectMapper;
+import com.mongodb.MongoClient;
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+
+public class WriteIntoExcel {
+	public XSSFRow row1 = null;
+
+	@SuppressWarnings("resource")
+	public static void main(String[] args) throws IOException {
+
+		XSSFWorkbook workbook = new XSSFWorkbook();
+		XSSFSheet sheet1 = workbook.createSheet("Java Books");
+
+		// XSSFSheet sheet = sheet1.getSheetAt(0);
+
+// Creating a Mongo client 
+		MongoClient mongo = new MongoClient("localhost", 27017);
+
+// Accessing the database 
+		MongoDatabase database = mongo.getDatabase("admin");
+
+// Retrieving a collection 
+		MongoCollection<Document> collection = database.getCollection("EmployeeDtls");
+		System.out.println("Collection sampleCollection selected successfully");
+
+// Getting the iterable object 
+
+		Document d = null;
+		FindIterable<Document> iterDoc = collection.find();
+
+// Getting the iterator 
+		ArrayList<String> columns = new ArrayList<String>();
+		Iterator it = iterDoc.iterator();
+
+		System.out.println("List elements : ");
+
+		// Object document = it.hasNext() ? it.next() : null;
+		int rownum = 0;
+
+		while (it.hasNext()) {
+
+			Document document = (Document) it.next();
+			System.out.println(document);
+
+			Map<String, Object> map = (Map<String, Object>) document;
+			if (rownum == 0) {
+				Set<String> headers = map.keySet();
+				Row row = sheet1.createRow(rownum);
+				int colNum = 0;
+				for (String string : headers) {
+
+					Cell cell = row.createCell(colNum);
+					System.out.println(string);
+					cell.setCellValue(string);
+					colNum++;
+				}
+
+			}
+			rownum++;
+
+			Collection<Object> value = map.values();
+
+			int colNum1 = 0;
+			Row row = sheet1.createRow(rownum);
+			for (Object str : value) {
+				Cell cell2 = row.createCell(colNum1);
+				cell2.setCellValue(str.toString());
+				System.out.println(str);
+				colNum1++;
+			}
+		}
+
+		FileOutputStream outputStream = new FileOutputStream("EmployeeData.xlsx");
+		workbook.write(outputStream);
+		System.out.println("DOne");
+	}
+}
